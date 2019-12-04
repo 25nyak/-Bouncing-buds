@@ -3,7 +3,10 @@
   <head>
     <style>
       html,
-      body {
+      body {BABYLON.SceneLoader.Append("https://www.babylonjs.com/Assets/DamagedHelmet/glTF/", "DamagedHelmet.gltf", scene, function (meshes) {
+    scene.createDefaultCameraOrLight(true, true, true);
+    scene.createDefaultEnvironment();       
+}); {
         overflow: hidden;
         width: 100%;
         height: 100%;
