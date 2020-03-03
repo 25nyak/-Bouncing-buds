@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ar Bouncing buds.city</title>
+
+    <meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="text.css" />
+ <!-- Importing other components !-->
+    <script src="//cdn.rawgit.com/donmccurdy/aframe-extras/v3.8.1/dist/aframe-extras.min.js"></script>
+    <script src="assets/scripts/aframe-controller-cursor-component.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lettering.js/0.7.0/jquery.lettering.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.0/TweenMax.min.js"></script>
+
+    <script src="https://hammerjs.github.io/dist/hammer.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.js"></script>
+
+    <script src="lib/dist/aframe-city-builder.js"></script>
+
+    <script src="http://192.168.1.15:1337/vorlon.js"></script>
+    <script src="https://rawgit.com/kfarr/aframe-select-bar-component/master/dist/aframe-select-bar-component.min.js"></script>
+
+  </head>
+  <body>
+    <a-scene id="my-scene" ar>
+
+       <a-camera>
+
+          <a-entity select-bar="controls: false" id="menuActions" scale="0.7 0.7 0.7" position="0 -0.2 -0.4" rotation="0 0 0">
+            <optgroup label="CITIES" value="actions">
+              <option value="NewYington" src="assets/environment/icon_teleport.png" selected>New Yington</option>
+              <option value="NewYork" src="assets/environment/icon_erase.png">New York</option>
+              <option value="SanFrancisco" src="assets/environment/icon_saveAs.png">San Francisco</option>
+              <option value="Indianapolis" src="assets/environment/icon_save.png">Indianapolis</option>
+              <option value="LosAngeles" src="assets/environment/icon_new.png">Los Angeles</option>
+              <option value="Detroit" src="assets/environment/icon_exit.png">Detroit</option>
+              <option value="Orlando" src="assets/environment/icon_undo.png">Orlando</option>
+            </optgroup>
+          </a-entity>
+
+       </a-camera>
+
+      <!-- Use AR raycaster, and set raycaster to ignore all A-Frame objects like logos. -->
+      <a-entity ar-raycaster raycaster="objects:none"></a-entity>
+      <!-- Declare a ring to use as the raycaster intersection mark. -->
+      <a-ring id="mark" rotation="-90 0 0" radius-inner="0.01" radius-outer="0.02">
+        <a-ring color="yellow" radius-inner="0.03" radius-outer="0.04">
+        <a-animation
+            attribute="scale"
+            from="1 1 1"
+            to="2 2 2"
+            direction="alternate"
+            dur="1000"
+            repeat="indefinite"></a-animation>
+        </a-ring>
+        <a-ring color="yellow" radius-inner="0.05" radius-outer="0.06">
+        <a-animation
+            attribute="scale"
+            from="1 1 1"
+            to="3 3 3"
+            direction="alternate"
+            dur="1000"
+            repeat="indefinite"></a-animation>
+        </a-ring>
+
+      </a-ring>
+
+      <!-- City -->
+      <a-entity id="city-holder" position="100000 0 0">
+        <a-entity id="tableGrid" position="0 0 0" gridhelper="size:10; divisions:20">      </a-entity>
+
+        <a-entity id="city" position="-0.25 -0.5 -0.25">
+          <!-- Grid -->
+
+          <!-- <a-entity id="tableGrid" position="0.25 0.5 0.25" gridhelper="size:10; divisions:20">      </a-entity> -->
+
+        </a-entity>
+      </a-entity>
+
+    </a-scene>
+    <div>
+    <section class="container">
+      <h1>
+        <span class="title">aframe.city</span><br/>
+        <!-- <span class="title">Orient Scene - Tap to Place</span><br/> -->
+        <span class="title" id="ui-cityname"></span>
+      </h1>
+
+      <div class="button">hide</div>
+    </section>
+    <section class="container-orient">
+      <span class="orient">Aim Cursor And</span><br/>
+      <span class="orient">Tap to Center Scene</span>
+    </section>
+
+    </div>
+    <div id="touch-zone"></div>
+
+
+    <script type="text/javascript">
+
+    var myElement = document.getElementById('touch-zone');
+
+    // create a simple instance
+    // by default, it only adds horizontal recognizers
+    var mc = new Hammer(myElement);
+
+    // listen to events...
+
+    mc.on("panleft panright tap press", function(ev) {
+        // myElement.textContent = ev.type +" gesture detected.";
+        console.log(ev.type +" gesture detected.");
+        if (ev.type == "panleft") {
+          // get element for control bar, make it go left
+          document.getElementById("menuActions").components['select-bar'].onOptionNext();
+        }
+        if (ev.type == "panright") {
+          // get element for control bar, make it go right
+          document.getElementById("menuActions").components['select-bar'].onOptionPrevious();
+        }
+    });
+
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyBcPajwJo7PyqEjQ70GuvQyIXGOE8xW7Cs",
+        authDomain: "test-b0c62.firebaseapp.com",
+        databaseURL: "https://test-b0c62.firebaseio.com",
+        storageBucket: "test-b0c62.appspot.com",
+        messagingSenderId: "832504680709"
+      };
+      firebase.initializeApp(config);
+
+
+      // Get a reference to the database service
+      var database = firebase.database();
+
+      function loadCityData(cityNameCamel) {
+        console.log("trying to load city:" + cityNameCamel);
+
+        // Erase exiting city (if any)
+        var cityEl = document.getElementById("city");
+        while (cityEl.firstChild) {
+          cityEl.removeChild(cityEl.firstChild);
+        }
+
+        firebase.database().ref('cities/' + cityNameCamel).once('value').then(function(snapshot) {
+          var cityJSON = snapshot.val().cityJSON;
+          console.log(cityJSON);
+          toDOM(cityJSON);
+          document.title = "aframe.city#" + cityNameCamel;
+          document.getElementById("ui-cityname").textContent = "#" + cityNameCamel;
+
+          $("#ui-cityname").lettering();
+
+        });
+      }
+
+      // on load - load the city -- TODO - this should be on a city loader component on the scene entity instead
+      setTimeout(function(){
+        // IS THERE A HASH?
+        var cityName = location.hash.substring(1);
+        console.log("hash check: " + cityName);
+        if (cityName) {
+          loadCityData(cityName);
+        };
+      }, 1000);
+
+      function appendObject(id, file, scale, position, rotation, scale) {
+        console.log(position);
+        $('<a-entity />', {
+          id: id,
+          class: 'city object children',
+          position: position,  // doesn't seem to do anything
+          scale: scale,
+          rotation: rotation,
+          file: file,
+          "obj-model": "obj: url(assets/obj/" + file + ".obj); mtl: url(assets/obj/" + file + ".mtl)",
+          // src: '#' + file + '-obj',
+          // mtl: '#' + file + '-mtl',
+          appendTo : $('#city')
+        });
+       document.getElementById(id).setAttribute("position", position); // workaround - this does set position
+      }
+
+      function toDOM(jsonInput) {
+        // this assumes it is being run first -- it will start placing objects with id 0 and set objectcount to the number of loaded objects
+        for(var i = 0; i < jsonInput.length; i++) {
+            var obj = jsonInput[i];
+            console.log("Adding entity #" + obj.id);
+            appendObject(obj.id, obj.file, obj.scale, obj.position, obj.rotation, obj.scale)
+        }
+        objectCount = i;
+        console.log("objectCount:" + objectCount);
+      }
+
+      function loadFileButton() {
+        $.getJSON($("#fileInput")[0].value, function(json) {
+            toDOM(json);
+        });
+      }
+
+      function loadButton() {
+        console.log("load button clicked");
+
+        function isJsonString(str) {
+            try {
+                JSON.parse(str);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
+
+        jsonInput = $("#jsonInput")[0].value;
+        console.log(jsonInput);
+
+        if (isJsonString(jsonInput)) {
+          toDOM(JSON.parse(jsonInput));
+        } else {
+          console.log("oops not valid json");
+        }
+      }
+
+      function locationHashChanged() {
+        // check if valid hash
+        // if yes, then clear old city // load new city with that hash
+        var cityName = location.hash.substring(1);
+        console.log("hash changed to: " + cityName);
+        if (cityName) {
+          loadCityData(cityName);
+        };
+      }
+      window.onhashchange = locationHashChanged;
+
+      window.addEventListener('click', function () {
+        // NEW: Move the city element to where the mark is
+        var mark = document.querySelector('#mark');
+        var el = document.querySelector('#city-holder');
+        // AFRAME.scenes[0].appendChild(el);
+        // el.innerHTML = content;
+        // el.setAttribute('scale', '0.1, 0.1, 0.1');
+        el.setAttribute('position', mark.getAttribute('position'));
+
+// rotate the city to "face" the camera
+//        return object3D.lookAt(new THREE.Vector3(target.x, target.y, target.z));
+//        https://github.com/ngokevin/kframe/blob/master/components/look-at/index.js
+      });
+
+      var raycaster = document.querySelector('[ar-raycaster]');
+      var mark = document.querySelector('#mark');
+      raycaster.addEventListener('raycaster-intersection', function (evt) {
+        // Turn the mark green and move it to the intersection point.
+        mark.setAttribute('color', 'green');
+        // FIXME: lerp position
+        mark.setAttribute('position', evt.detail.intersections[0].point);
+      });
+      raycaster.addEventListener('raycaster-intersection-cleared', function (evt) {
+        // Turn the mark red.  FIXME: lerp position
+        mark.setAttribute('color', 'red');
+      });
+
+
+      $(document).ready(function() {
+        $(".title").lettering();
+        $(".button").lettering();
+      });
+
+
+      $(document).ready(function() {
+        animation();
+      }, 1500);
+
+      $('.button').click(function() {
+        animation_out();
+      });
+
+
+      function animation() {
+        var title1 = new TimelineMax();
+        title1.to(".button", 0, {visibility: 'hidden', opacity: 0})
+        title1.staggerFromTo(".title span", 0.5,
+        {ease: Back.easeOut.config(1.7), opacity: 0, bottom: -80},
+        {ease: Back.easeOut.config(1.7), opacity: 1, bottom: 0}, 0.05);
+        title1.to(".button", 0.2, {visibility: 'visible' ,opacity: 1})
+      }
+
+      function animation_out() {
+        var title1 = new TimelineMax();
+        title1.to(".button", 0, {visibility: 'hidden', opacity: 0})
+        title1.staggerFromTo(".title span", 0.5,
+        {ease: Back.easeOut.config(1.7), opacity: 1, bottom: 0},
+        {ease: Back.easeOut.config(1.7), opacity: 0, bottom: -80}, 0.005);
+        title1.to(".button", 0.2, {visibility: 'visible' ,opacity: 1})
+      }
+
+    </script>
+
+  </body>
+</html>

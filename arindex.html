@@ -1,0 +1,498 @@
+<html>
+  <head>
+    <title>Bouncing buds.city</title>
+    <meta charset="utf-8">
+    <title>A-Frame Wevr Component</title>
+    <meta name="description" content="Example for Wevr component.">
+    <script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
+    <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>
+    <script src="/dist/wevr.js"></script>
+    <script>
+        AFRAME.registerComponent('switch-environment', {
+            schema: {type: 'string'},
+            init: function () {
+                var self = this;
+                var up = (this.data == "up");
+                this.el.addEventListener('click', function (evt) {
+                    self.system.switchEnvironment(up);
+                });
+            }
+        });
+
+        AFRAME.registerSystem('switch-environment', {
+            init: function () {
+                var self = this;
+                this.el.addEventListener("loaded", function () {
+                    self.environment = document.querySelector("#environment");
+                    self.name = document.querySelector("#name");
+                    self.names = ['default', 'contact', 'egypt', 'checkerboard', 'forest', 'goaland', 'yavapai', 'goldmine', 'threetowers', 'poison', 'arches', 'tron', 'japan', 'dream', 'volcano', 'starry', 'osiris'];
+                    self.curIndex = self.names.indexOf(self.environment.getAttribute("environment").preset);
+                    self.name.setAttribute('text', 'value', self.names[self.curIndex]);
+
+                    let wevrSystem = self.el.systems.wevr;
+                    self.stateHandler = wevrSystem.stateHandler;
+                    self.stateHandler.addStateListener("#environment", function (data) {
+                        self.setEnvironmentIndex(data.envName);
+                    });
+                });
+            },
+
+            switchEnvironment: function (up) {
+                if (up) {
+                    if (++this.curIndex == this.names.length) {
+                        this.curIndex = 0;
+                    }
+                } else {
+                    if (--this.curIndex == -1) {
+                        this.curIndex = this.names.length - 1;
+                    }
+                }
+                var name = this.names[this.curIndex];
+                this.setEnvironment(name);
+                var fields = {envName: name};
+                this.stateHandler.updateState("#environment", fields);
+            },
+
+            setEnvironmentIndex: function (name) {
+                if (name != this.environment.getAttribute("environment").preset) {
+                    this.curIndex = this.names.indexOf(name);
+                    this.setEnvironment(name);
+                }
+            },
+
+            setEnvironment: function (name) {
+                this.environment.setAttribute('environment', 'preset', name);
+                this.name.setAttribute('text', 'value', name);
+            }
+        });
+    </script>
+  </head>
+  <body>
+<a-scene wevr="signalUrl:ws://localhost:9000/wevr;avatarTemplate:#avatarTemplate;avatarRHTemplate:#avatarHandTemplate;avatarLHTemplate:#avatarHandTemplate">
+    <assets>
+        <script id="avatarHandTemplate" type="text/html">
+        <a-sphere color="#ff8888" radius="0.1" ${rotation}><a-sphere position="0.09 0 0.02" scale="0.5 0.5 0.5" color="#5985ff" radius="0.1"></a-sphere>
+            <a-sphere position="0 0 -0.075" scale="0.35 0.35 1" color="#88ff88" radius="0.1"></a-sphere>
+            <a-sphere position="0.05  0 -0.075" rotation="0 -20 0" scale="0.35 0.35 1" color="#88ff88" radius="0.1"></a-sphere>
+            <a-sphere position="-0.05 0 -0.075" rotation="0 20 0" scale="0.25 0.25 0.75" color="#88ff88" radius="0.1"></a-sphere>
+        </a-sphere>
+        </script>
+
+        <script id="avatarTemplate" type="text/html">
+            <a-sphere class="head"
+            color="#88ff88"
+            position="0 -0.05 0"
+            scale="0.25 0.3 0.2">
+
+            <a-entity class="face"
+            position="0 0 -0.6">
+            <a-sphere position="0 0.05 -0.4"
+            color="#5985ff"
+            scale="0.18 0.18 0.18">
+            </a-sphere>
+            <a-sphere class="eye"
+            color="#efefef"
+            position="0.3 0.35 -0.3"
+            scale="0.15 0.15 0.15"
+            >
+            <a-sphere class="pupil"
+            color="#000"
+            position="0 0 -1"
+            scale="0.45 0.45 0.45"
+            ></a-sphere>
+            </a-sphere>
+            <a-sphere class="eye"
+            color="#efefef"
+            position="-0.3 0.35 -0.3"
+            scale="0.15 0.15 0.15"
+            >
+            <a-sphere class="pupil"
+            color="#000"
+            position="0 0 -1"
+            scale="0.45 0.45 0.45"
+            ></a-sphere>
+            </a-sphere>
+            </a-entity>
+
+            </a-sphere>
+        </script>
+    </assets>
+
+    <a-entity id="environment" environment="preset:japan"></a-entity>
+
+    <a-box depth="0.1" height="2" width="1" color="#282828" metalness="0.5" position="0 1 -3.5" rotation="0 0 0">
+        <a-entity text="value: Environment;color:#dddddd;anchor:center;baseline:center;width:1.5" scale="2 2 2"
+                  position="1.1 0.75 0.05"></a-entity>
+
+        <a-triangle switch-environment="down" color="#ccc" position="-0.39 0.2 0.06" side="double"
+                    scale="0.15 0.15 0.15" rotation="0 0 90"></a-triangle>
+        <a-triangle switch-environment="up" color="#ccc" position="0.39 0.2 0.06" side="double" scale="0.15 0.15 0.15"
+                    rotation="0 0 -90"></a-triangle>
+        <a-entity id="name" text="value:name;color:#ccf;anchor:center;baseline:center;width:2;align:center"
+                  position="0 0.2 0.06"></a-entity>
+    </a-box>
+
+    <a-light type="ambient" color="#445451"></a-light>
+    <a-light type="point" intensity="2" position="2 4 4"></a-light>
+
+</a-scene>
+
+
+    <meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.js"></script>
+
+    <script src="lib/dist/aframe-city-builder.js"></script>
+
+    <script src="http://192.168.1.15:1337/vorlon.js"></script>
+  <a-scene id="my-scene" ar>
+
+      <!-- Use AR raycaster, and set raycaster to ignore all A-Frame objects like logos. -->
+      <a-entity ar-raycaster raycaster="objects:none"></a-entity>
+      <!-- Declare a ring to use as the raycaster intersection mark. -->
+      <a-ring id="mark" rotation="-90 0 0" radius-inner="0.01" radius-outer="0.02"></a-ring>
+
+      <!-- City -->
+      <a-entity id="city-holder" position="100000 0 0">
+        <a-entity id="tableGrid" position="0 0 0" gridhelper="size:10; divisions:20">      </a-entity>
+
+        <a-entity id="city" position="-0.25 -0.5 -0.25">
+          <!-- Grid -->
+
+          <!-- <a-entity id="tableGrid" position="0.25 0.5 0.25" gridhelper="size:10; divisions:20">      </a-entity> -->
+
+        </a-entity>
+      </a-entity>
+
+
+        <a-entity
+          id="title"
+          position="3.5 1 -0.5"
+          geometry="primitive: plane; width: 4; height: 1.4"
+          material="color: black; opacity: 0.6"
+          text__appname="color: yellow; align: center; font: exo2bold; wrap-count: 12; z-offset: 0.01; baseline: bottom;
+                value: aframe.city"
+          text__cityname="color: white; align: center; font: exo2semibold; wrap-count: 24; z-offset: 0.01; baseline: top;
+                value: #NewCity"
+        ></a-entity>
+
+       <a-assets>
+      <a-assets>
+      <!-- Background video !-->
+      <video id="video" src="assets/background.mp4" autoplay loop muted preload="auto"></video>
+
+      <!-- Pickup assets !-->
+      <a-asset-item id="pickup-obj" src="assets/models/pickup/pickup_truck.obj"></a-asset-item>
+      <a-asset-item id="pickup-mtl" src="assets/models/pickup/pickup_truck.mtl"></a-asset-item>
+
+      <!-- Zombie assets !-->
+      <a-asset-item id="zombie" src="assets/models/zombie/zombie.json"></a-asset-item>
+        
+      <!-- Audio asset !-->
+      <audio id="laserFire"     src="assets/sounds/Laser-sound.mp3"></audio>
+      <audio id="zombieMoaning" src="assets/sounds/zombie-sound.mp3"></audio>
+      <audio id="scratchSound"  src="assets/sounds/scrach-full-sound.mp3"></audio>
+    </a-assets>
+
+    <!-- Player, controllers & environment !-->
+    <a-entity id="player" position="0.104 2.965 -1.107" sound="src: #scratchSound;" camera look-controls></a-entity>
+    <a-videosphere src="#video" rotation="0 90 0"></a-videosphere>
+    <a-entity 
+      id="rightHand"
+      raycaster="objects: .pickable, .enemy" 
+      position="0.104 2.965 -1.107"
+      hand-controls="right" 
+      controller-cursor>
+    </a-entity>
+    
+ 
+    <!-- Gun !-->
+    <a-entity id="laserGun" class="pickable" scale="1 1 1" position="0.038 2.834 -2" object-model="src:url(assets/models/gun/ablast/gun.json)" sound="src: #laserFire; poolSize: 2000;" rotation="60.07000000000001 0 0"></a-entity>
+
+    <!-- Floating instructions !-->
+    <a-text id="instruction" color="red" position="-5.753 10 -20" value="Objective: Search a gun and pick it." line-height="100" letter-space="5" width="20">
+      <a-animation attribute="text.opacity" from="1" to="0" repeat="indefinite" direction="alternate"></a-animation>
+    </a-text>
+  
+
+  <script type="text/javascript">
+    window.addEventListener("load", function(){
+      // Constants of the game
+      const SCENE             = document.querySelector("a-scene");
+      const RIGHT_CONTROLLER  = document.querySelector("#rightHand");
+     
+      const PLAYER            = document.querySelector("#player");
+      const LIFE_TEXT         = document.querySelector("#life");
+      const SCORE_TEXT        = document.querySelector("#score");
+      const INSTRUCTION_TEXT  = document.querySelector("#instruction");
+
+      // Variables of the game
+      var playingGame     = false;
+      var pickedGun       = null;
+      var targetEnemy     = null;
+      var score           = 0;
+      var life            = 5;
+      var spawnedEnemies  = 0; // Instead of the querySelectorAll every two seconds
+      
+      // Spawning zombie every 2 seconds
+      setInterval(function(){
+        if(!playingGame) return;
+
+        // If there is less than 10 zombies, spawn another one
+        if(spawnedEnemies < 2) createNewEnemy(); 
+      }, 2000)
+
+      // Grab the gun
+      RIGHT_CONTROLLER.addEventListener('click', function(evt) {
+        if(evt.detail.intersectedEl === undefined) return; 
+        if(evt.detail.intersectedEl.className !== "pickable") return;
+        if(pickedGun !== null) return; 
+
+        pickedGun = evt.detail.intersectedEl;
+        SCENE.removeChild(pickedGun);
+        RIGHT_CONTROLLER.appendChild(pickedGun);
+        pickedGun.setAttribute("class", "");
+        pickedGun.setAttribute("position", "0.013 0.005 -0.054");
+        pickedGun.setAttribute("rotation", "-3.552 59.702 91.616");
+        
+        INSTRUCTION_TEXT.setAttribute("value", 'Objective : Kill All Zombies');
+        createNewEnemy(); // We create one new zombie for the "tutorial"
+      });
+
+      // Define if the player is targeting a zombie
+      RIGHT_CONTROLLER.addEventListener("mouseenter", function(evt) {
+        if(evt.detail.intersectedEl === undefined) return;
+        
+        if(evt.detail.intersectedEl.className === "enemy" )
+          targetEnemy = evt.detail.intersectedEl;
+      })
+
+      // Define if the player is no more targeting a zombie
+      RIGHT_CONTROLLER.addEventListener("mouseleave", function(evt) {
+        if(targetEnemy === null) return;
+
+        targetEnemy = null;
+      })
+
+      // When player shoot, kill the zombie or do nothing;
+      RIGHT_CONTROLLER.addEventListener('triggerdown', function(evt) {
+        if(pickedGun === null) return; 
+        pickedGun.components.sound.playSound();
+
+        if(targetEnemy === null) return;
+        SCENE.removeChild(targetEnemy);
+        targetEnemy = null;
+
+        if(!playingGame) playingGame = true; // "tutorial" is over, the game can properly start.
+
+        score += 10;
+        spawnedEnemies--;
+        SCORE_TEXT.setAttribute("value", "Score: " + score);
+      })
+
+      // Reduce life of the player
+      function reduceLife() {
+        if(life === 0) return CallGameOver();
+
+        PLAYER.components.sound.playSound();
+
+        life--;
+        LIFE_TEXT.setAttribute("value", "Life: " + life);
+        return true;
+      }
+
+      function createNewEnemy() {
+        var zombie    = document.createElement("a-entity");
+        zombie.setAttribute("class","enemy");
+        zombie.setAttribute("position", Math.floor((Math.random() * 5) + 1) + " 0 -" + Math.floor((Math.random() * 20) + 6));
+        zombie.setAttribute("scale","0.1 0.1 0.1");
+        zombie.setAttribute("json-model","src: #zombie");
+        zombie.setAttribute("animation-mixer","clip: Run");
+        zombie.setAttribute("sound","src: #zombieMoaning; autoplay: true;");
+
+        // Animation need to be investigated <----
+        var animation = document.createElement("a-animation");
+        animation.setAttribute("to", "0 0 -4");
+        animation.setAttribute("dur", "400000");
+        animation.setAttribute("attribute", "position");
+        animation.addEventListener("animationend", function(evt) {
+          zombie.setAttribute("animation-mixer", "clip: Attack; loop: pingpong;");
+          zombie.addEventListener("animation-loop", function(){
+            reduceLife();
+          })
+        })
+
+        zombie.appendChild(animation);
+        SCENE.appendChild(zombie);
+        spawnedEnemies++;
+      }
+
+      // Create a game over function.
+      function CallGameOver() {
+        removeAllEnemies();
+        playingGame = false;
+        life  = 5;
+        score = 0;
+
+        LIFE_TEXT.setAttribute("value", "Life: " + life);
+        SCORE_TEXT.setAttribute("value", "Score: " + score);
+        INSTRUCTION_TEXT.setAttribute("value", 'Are you giving up? Kill zombie!');
+        createNewEnemy();
+      }
+
+      function removeAllEnemies() {
+        var enemies = document.querySelectorAll('.enemy'); 
+        for(var i = 0; i < enemies.length; ++i) {
+          SCENE.removeChild(enemies[i]);
+        }
+        spawnedEnemies = 0;
+      }
+
+    });
+    </script>
+<script type="text/javascript">
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyBcPajwJo7PyqEjQ70GuvQyIXGOE8xW7Cs",
+        authDomain: "test-b0c62.firebaseapp.com",
+        databaseURL: "https://test-b0c62.firebaseio.com",
+        storageBucket: "test-b0c62.appspot.com",
+        messagingSenderId: "832504680709"
+      };
+      firebase.initializeApp(config);
+
+      // Get a reference to the database service
+      var database = firebase.database();
+
+      function loadCityData(cityNameCamel) {
+        console.log("trying to load city:" + cityNameCamel);
+
+        // Erase exiting city (if any)
+        var cityEl = document.getElementById("city");
+        while (cityEl.firstChild) {
+          cityEl.removeChild(cityEl.firstChild);
+        }
+
+        firebase.database().ref('cities/' + cityNameCamel).once('value').then(function(snapshot) {
+          var cityJSON = snapshot.val().cityJSON;
+          console.log(cityJSON);
+          toDOM(cityJSON);
+          document.getElementById("title").setAttribute("text__cityname", "value", "#" + cityNameCamel)
+          document.title = "aframe.city#" + cityNameCamel;
+
+        });
+      }
+
+      // on load - load the city -- TODO - this should be on a city loader component on the scene entity instead
+      setTimeout(function(){
+        // IS THERE A HASH?
+        var cityName = location.hash.substring(1);
+        console.log("hash check: " + cityName);
+        if (cityName) {
+          loadCityData(cityName);
+        };
+      }, 1500);
+
+      function appendObject(id, file, scale, position, rotation, scale) {
+        console.log(position);
+        $('<a-entity />', {
+          id: id,
+          class: 'city object children',
+          position: position,  // doesn't seem to do anything
+          scale: scale,
+          rotation: rotation,
+          file: file,
+          "obj-model": "obj: url(assets/obj/" + file + ".obj); mtl: url(assets/obj/" + file + ".mtl)",
+          // src: '#' + file + '-obj',
+          // mtl: '#' + file + '-mtl',
+          appendTo : $('#city')
+        });
+       document.getElementById(id).setAttribute("position", position); // workaround - this does set position
+      }
+
+      function toDOM(jsonInput) {
+        // this assumes it is being run first -- it will start placing objects with id 0 and set objectcount to the number of loaded objects
+        for(var i = 0; i < jsonInput.length; i++) {
+            var obj = jsonInput[i];
+            console.log("Adding entity #" + obj.id);
+            appendObject(obj.id, obj.file, obj.scale, obj.position, obj.rotation, obj.scale)
+        }
+        objectCount = i;
+        console.log("objectCount:" + objectCount);
+      }
+
+      function loadFileButton() {
+        $.getJSON($("#fileInput")[0].value, function(json) {
+            toDOM(json);
+        });
+      }
+
+      function loadButton() {
+        console.log("load button clicked");
+
+        function isJsonString(str) {
+            try {
+                JSON.parse(str);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
+
+        jsonInput = $("#jsonInput")[0].value;
+        console.log(jsonInput);
+
+        if (isJsonString(jsonInput)) {
+          toDOM(JSON.parse(jsonInput));
+        } else {
+          console.log("oops not valid json");
+        }
+      }
+
+      function locationHashChanged() {
+        // check if valid hash
+        // if yes, then clear old city // load new city with that hash
+        var cityName = location.hash.substring(1);
+        console.log("hash changed to: " + cityName);
+        if (cityName) {
+          loadCityData(cityName);
+        };
+      }
+      window.onhashchange = locationHashChanged;
+
+      window.addEventListener('click', function () {
+        // NEW: Move the city element to where the mark is
+        var mark = document.querySelector('#mark');
+        var el = document.querySelector('#city-holder');
+        // AFRAME.scenes[0].appendChild(el);
+        // el.innerHTML = content;
+        // el.setAttribute('scale', '0.1, 0.1, 0.1');
+        el.setAttribute('position', mark.getAttribute('position'));
+
+// rotate the city to "face" the camera
+//        return object3D.lookAt(new THREE.Vector3(target.x, target.y, target.z));
+//        https://github.com/ngokevin/kframe/blob/master/components/look-at/index.js
+      });
+
+      var raycaster = document.querySelector('[ar-raycaster]');
+      var mark = document.querySelector('#mark');
+      raycaster.addEventListener('raycaster-intersection', function (evt) {
+        // Turn the mark green and move it to the intersection point.
+        mark.setAttribute('color', 'green');
+        // FIXME: lerp position
+        mark.setAttribute('position', evt.detail.intersections[0].point);
+      });
+      raycaster.addEventListener('raycaster-intersection-cleared', function (evt) {
+        // Turn the mark red.  FIXME: lerp position
+        mark.setAttribute('color', 'red');
+      });
+    </script> 
+  </body>
+</html>
